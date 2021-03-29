@@ -7,7 +7,7 @@ branches:
   only:
     - main # build main branch only
 script:
-  - cd docs && hexo generate # generate static files
+  - hexo generate # generate static files
 deploy:
   provider: pages
   skip-cleanup: true
