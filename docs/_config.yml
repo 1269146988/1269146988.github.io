@@ -119,9 +119,9 @@ index_with_subtitle: false
 menu:
   home: /
   categories: /categories/
-  about: /about/
   archives: /archives/
   tags: /tags/
+  about: /about/
   #sitemap: /sitemap.xml
 #  commonweal: /404.html
 
@@ -353,7 +353,7 @@ custom_logo:
 # Available value:
 #    normal | night | night eighties | night blue | night bright
 # https://github.com/chriskempson/tomorrow-theme
-highlight_theme: night
+highlight_theme: normal
 
 
 # ---------------------------------------------------------------
