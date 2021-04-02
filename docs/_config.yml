@@ -4,8 +4,8 @@
 # ---------------------------------------------------------------
 
 # Site
-title: 最美的是下雨天
-subtitle: 往后的一生，我只有你。
+title: 最美的不是下雨天
+subtitle: 是曾与你躲过雨的屋檐
 description: 往后的一生，我只有你。
 author: 往后余生
 # Support language: de, en, fr-FR, id, ja, ko, pt-BR, pt, ru, zh-Hans, zh-hk, zh-tw
@@ -93,7 +93,7 @@ since: 2021
 authoricon: heart
 
 # Footer `powered-by` and `theme-info` copyright
-copyright: true
+copyright: false
 
 # ---------------------------------------------------------------
 # SEO Settings
@@ -109,7 +109,7 @@ seo: true
 
 # If true, will add site-subtitle to index page, added in jekyll config.
 # subtitle: Subtitle
-index_with_subtitle: false
+index_with_subtitle: true
 
 # ---------------------------------------------------------------
 # Menu Settings
@@ -233,7 +233,7 @@ social_icons:
 
 # Sidebar Avatar
 # in directory: /assets/images/avatar.gif
-#avatar:
+avatar: /assets/images/my-avatar.jpeg
 
 
 # Table Of Contents in the Sidebar
@@ -373,7 +373,7 @@ han: false
 #swiftype_key:
 
 # Baidu Analytics ID
-#baidu_analytics:
+baidu_analytics: 907fab35e1638c211ae68fe8935476f7
 
 # Duoshuo ShortName
 #duoshuo_shortname:
