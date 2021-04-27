@@ -13,25 +13,25 @@ categories:
 
 ### traefik介绍：[官网文档](https://doc.traefik.io/traefik/)
 
-- ###### 一个反向代理的工具，可以理解成一个不需要手动改配置的nginx。
+- 一个反向代理的工具，可以理解成一个不需要手动改配置的nginx。
 
 ### Gitea介绍：[Docker安装官方文档](https://docs.gitea.io/zh-cn/install-with-docker/)
 
-- ###### 一个轻量化的git代码仓库。小团队和个人使用完全足够了。 1h1g服务器也能跑的飞起
+- 一个轻量化的git代码仓库。小团队和个人使用完全足够了。 1h1g服务器也能跑的飞起
 
 ### SSH容器直通:
 
-- ###### 让gitea容器和宿主机共用宿主机的ssh通道，从而达到一个22端口宿主机和gitea服务一起使用
+- 让gitea容器和宿主机共用宿主机的ssh通道，从而达到一个22端口宿主机和gitea服务一起使用
 
-- ###### 如果不使用ssh容器直通，你的gitea还想使用ssh功能的话，就必须再加一个端口，比如2224，这样的话也不是不能用，只不过是在网页上面点击ssh的clone链接的时候会带上一个端口号。
+- 如果不使用ssh容器直通，你的gitea还想使用ssh功能的话，就必须再加一个端口，比如2224，这样的话也不是不能用，只不过是在网页上面点击ssh的clone链接的时候会带上一个端口号。
 
-###### 使用ssh容器直通后复制的链接是这样的：
+使用ssh容器直通后复制的链接是这样的：
 
 ```sh
 git@yourdomain.com:yourname/test.git
 ```
 
-###### 不使用ssh容器直通后复制的链接是这样的：
+不使用ssh容器直通后复制的链接是这样的：
 
 ```shell
  ssh://git@yourdomain.com:2224/yourname/test.git
