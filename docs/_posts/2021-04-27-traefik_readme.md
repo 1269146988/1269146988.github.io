@@ -1,116 +1,168 @@
 ---
-title: Traefik使用注意点
+title: Docker+Traefik部署Gitea并开启HTTPS+SSH容器直通
 date: 2021-04-24 11:29:53
+description: Docker+Traefik部署Gitea并开启HTTPS+SSH容器直通
 categories:
 - Traefik
+- Docker
 ---
-Traefik使用注意点
 
-1. 类似nginx的反向代理
+## 前言：
 
-2. 用在docker上面时需要注意
+##### 	最近在学习docker swarm，然后发现如果使用集群的话，反向代理如果还需要手动配置服务发现就太麻烦了。所以又发现了traefik这个可以支持docker集群模式的主动服务发现工具。
 
-   1. 想要被托管的容器必须和traefik处于同一网络中
+### traefik介绍：[官网文档](https://doc.traefik.io/traefik/)
 
-   2. 建议关闭主动发现暴露的容器的端口 exposedByDefault: false
+- ###### 一个反向代理的工具，可以理解成一个不需要手动改配置的nginx。
 
-   3. 主动将容器暴露给traefik 
+### Gitea介绍：[Docker安装官方文档](https://docs.gitea.io/zh-cn/install-with-docker/)
 
-      ```
+- ###### 一个轻量化的git代码仓库。小团队和个人使用完全足够了。 1h1g服务器也能跑的飞起
+
+### SSH容器直通:
+
+- ###### 让gitea容器和宿主机共用宿主机的ssh通道，从而达到一个22端口宿主机和gitea服务一起使用
+
+- ###### 如果不使用ssh容器直通，你的gitea还想使用ssh功能的话，就必须再加一个端口，比如2224，这样的话也不是不能用，只不过是在网页上面点击ssh的clone链接的时候会带上一个端口号。
+
+###### 使用ssh容器直通后复制的链接是这样的：
+
+```sh
+git@yourdomain.com:yourname/test.git
+```
+
+###### 不使用ssh容器直通后复制的链接是这样的：
+
+```shell
+ ssh://git@yourdomain.com:2224/yourname/test.git
+```
+
+##### 	使用起来没有任何区别，唯一的区别就是链接长得不一样
+
+------
+
+## 服务器环境：
+
+- 安装前需要先在服务器上面安装Docker和Docker-compose，本篇文章不做安装这两个的教程。请根据自己的服务器系统版本来安装，并改好docker的仓库源地址
+- 开启HTTPS需要一个解析到你服务器的域名（国内还需要备案）
+
+------
+
+## 开始安装：
+
+- ### 首先创建一个名为git的用户，并加入git用户组
+
+```shell
+sudo groupadd -g 888 git && adduser --uid 888 --gid 888 --system --shell /bin/bash --gecos "Git Version Control" --disabled-password --home /home/git git
+
+# 输出
+Adding system user `git' (UID 888) ...
+Adding new user `git' (UID 888) with group `git' ...
+Creating home directory `/home/git' ...
+```
+
+- #### 给git用户创建秘钥。直接回车回车回车就行了
+
+```shell
+sudo -u git ssh-keygen -t rsa -b 4096 -C "Gitea Host Key" && echo "$(cat /home/git/.ssh/id_rsa.pub)" >> /home/git/.ssh/authorized_keys
+
+# 输出
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/git/.ssh/id_rsa):
+Created directory '/home/git/.ssh'.
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /home/git/.ssh/id_rsa.
+Your public key has been saved in /home/git/.ssh/id_rsa.pub.
+The key fingerprint is:
+SHA256:kHsow5CKInZwlzShXQOJ7xs1kBf1RN18j3l8BenFtbw Gitea Host Key
+The key's randomart image is:
++---[RSA 4096]----+
+|    .==+o..o. ++o|
+|   o+++o. o  .oo*|
+| .oo.+=    . . B+|
+|..oo.. *      + *|
+|=. .= + S      E.|
+|+ .  = .         |
+|      o          |
+|     .           |
+|                 |
++----[SHA256]-----+
+```
+
+- #### 编写一个可执行文件（很重要，ssh容器直通就是执行这个文件）
+
+```shell
+sudo mkdir -p /app/gitea && sudo echo 'ssh -p 2222 -o StrictHostKeyChecking=no git@127.0.0.1 "SSH_ORIGINAL_COMMAND=\"$SSH_ORIGINAL_COMMAND\" $0 $@"' >> /app/gitea/gitea && sudo chmod +x /app/gitea/gitea
+```
+
+- #### 配置traefik，配置有很多种方式，我这里选择以`yml`配置文件的方式进行配置, 并且动态和静态配置在一起。首先新建一个`traefik.yml`文件作为traefik的配置文件，名字是什么不重要。以`.yml`结尾就可以。配置文件放在 `./config/traefik.yml`
+
+```yaml
+providers:  # 配置traefik读取动态配置的配置文件，可以和动态配置指定为同一个文件
+  file:
+    directory: "/etc/traefik"
+    filename: "traefik.yml"  # 这里是指需要加载的动态配置文件名
+    watch: true  # 是否监听配置文件变动
+  docker:
+    exposedByDefault: false  # 建议禁止自动发信暴露的容器
+
+log:
+  level: DEBUG  # 日志输出等级
+
+entryPoints:  # 定义入口点
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+api:
+  dashboard: true  # 开启控制面板
+  insecure: true  # 以不安全的方式开启
+
+```
+
+- ### 配置文件准备好后，使用`docker-compose up -d`启动即可，配置如下
+
+```yaml
+version: "3"
+services:
+  traefik:
+    image: "traefik:latest" # 我们直接部署最新版本，可自行调整
+    container_name: "traefik"
+    ports:
+      - "443:443"
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      # 将配置文件挂载进容器
+      - ./config:/etc/traefik
+      - /var/run/docker.sock:/var/run/docker.sock
+  gitea:
+    image: gitea/gitea:latest
+    container_name: gitea
+    environment:
+      - USER_UID=888
+      - USER_GID=888
+    restart: unless-stopped
+    volumes:
+      - /home/git/.ssh/:/data/git/.ssh
+      - gitea_data:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "127.0.0.1:2222:22"
+    labels:
       # 对外暴露容器服务
-      traefik.enable=true
-      ```
+      - traefik.enable=true
+      - traefik.http.services.gitea-service.loadbalancer.server.port=3000
+      - traefik.http.routers.gitea-router.rule=PathPrefix(`/`)
+      - traefik.http.routers.gitea-router.service=gitea-service
+      - traefik.http.routers.gitea-router.entrypoints=web
 
-   4. 需要显式的在docker-compose.yml文件中指定一个service
+volumes:
+  gitea_data:
+```
 
-      ```
-      # 配置一个服务指向内部端口
-      traefik.http.services.whoami-service.loadbalancer.server.port=80
-      ```
-
-   5. traefik的docker-compose.yml配置文件如下。需要手动创建外部网络
-
-      ```yaml
-      version: "3.7"
-      services:
-        traefik:
-          image: "traefik:latest" # 我们直接部署最新版本，可自行调整
-          container_name: "traefik"
-          ports:
-            - "80:80"
-            - "443:443"
-          volumes:
-            # 绑定我们的配置目录,traefik会自动寻找traefik.yml 等命名的配置文件
-            - ./config:/etc/traefik
-            - ./letsencrypt:/letsencrypt
-            # So that Traefik can listen to the Docker events
-            - /var/run/docker.sock:/var/run/docker.sock
-          networks:
-            - test
-        whoami:
-          image: containous/whoami
-          container_name: whoami
-          networks:
-            - test
-          labels:
-            # 对外暴露容器服务
-            - traefik.enable=true
-            # 配置一个服务指向内部端口
-            - traefik.http.services.whoami-service.loadbalancer.server.port=80
-      
-      networks:
-        test:
-          external: true
-      ```
-
-   6. 配置文件路径  ./config/traefik.yml
-
-      ```yaml
-      providers:  # 配置traefik读取动态配置的配置文件，可以和动态配置指定为同一个文件
-        file:
-          directory: "/etc/traefik"
-          filename: "traefik.yml"
-          watch: true  #  监听配置文件变动
-        docker:
-          exposedByDefault: false
-      
-      log:
-        level: DEBUG
-      
-      entryPoints:  # 定义入口点
-        web:
-          address: ":80"
-        websecure:
-          address: ":443"
-      
-      
-      api:
-        dashboard: true  # 开启控制面板
-        insecure: true
-        
-      certificatesResolvers:  # 使用该签发方式，一定要确保服务器80端口可以被访问
-        mytlschallenge:
-          acme:
-            email:  "yourname@domain"  # 配置接收证书过期通知邮箱
-            storage:  "/letsencrypt/acme.json"
-            tlsChallenge: {}
-      
-      #↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑静态配置修改后需要重启traefik↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
-      
-      http:
-        routers:
-          whoami:
-            entryPoints:
-              - web
-            rule: "Path(`/whoami`)"
-            service: whoami-service@docker
-          api:
-            entryPoints:
-              - "web"
-            rule: "PathPrefix(`/`)"
-            service: api@internal
-      
-      ```
-
-      
+- 开启HTTPS。未完待续
 
