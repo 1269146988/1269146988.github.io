@@ -108,21 +108,34 @@ providers:  # 配置traefik读取动态配置的配置文件，可以和动态�
     exposedByDefault: false  # 建议禁止自动发信暴露的容器
 
 log:
-  level: DEBUG  # 日志输出等级
+  level: INFO  # 日志输出等级
 
 entryPoints:  # 定义入口点
-  web:
+  http:
     address: ":80"
-  websecure:
+  https:
     address: ":443"
+
+
+certificatesResolvers:  # 使用该签发方式，一定要确保服务器80端口可以被访问
+  myresolver:
+    acme:
+      email:  "yourdomain@qq.com"  # 配置接收证书过期通知邮箱
+      storage:  "/letsencrypt/acme.json"
+      httpChallenge:
+        # used during the challenge
+        entryPoint: http
 
 api:
   dashboard: true  # 开启控制面板
   insecure: true  # 以不安全的方式开启
+#↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑静态配置修改后需要重启traefik↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+
+
 
 ```
 
-- ### 配置文件准备好后，使用`docker-compose up -d`启动即可，配置如下
+- ### 配置文件准备好后，使用`docker-compose up -d`启动即可，配置如下,配置了自动将http转发至https中间件
 
 ```yaml
 version: "3"
@@ -137,6 +150,7 @@ services:
     volumes:
       # 将配置文件挂载进容器
       - ./config:/etc/traefik
+      - ./letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock
   gitea:
     image: gitea/gitea:latest
@@ -153,16 +167,38 @@ services:
     ports:
       - "127.0.0.1:2222:22"
     labels:
-      # 对外暴露容器服务
-      - traefik.enable=true
-      - traefik.http.services.gitea-service.loadbalancer.server.port=3000
-      - traefik.http.routers.gitea-router.rule=PathPrefix(`/`)
-      - traefik.http.routers.gitea-router.service=gitea-service
-      - traefik.http.routers.gitea-router.entrypoints=web
+        # 对外暴露容器服务
+        - traefik.enable=true
+        # 创建一个https路由
+        - traefik.http.routers.gitea-https.rule=Host(`yourdomain.com`)
+        # 为该路由开启https
+        - traefik.http.routers.gitea-https.tls=true
+        # 指定证书签发对象
+        - traefik.http.routers.gitea-https.tls.certresolver=myresolver
+        # 指定该路由对应的service
+        - traefik.http.routers.gitea-https.service=gitea
+
+        # 创建一个http路由
+        - traefik.http.routers.gitea-http.rule=Host(`yourdomain.com`)
+        # 指定该路由对应的service
+        - traefik.http.routers.gitea-http.service=gitea
+
+        # 给路由指定入站端口
+        - traefik.http.routers.gitea-http.entrypoints=http
+        - traefik.http.routers.gitea-https.entrypoints=https
+
+        # 创建一个服务用来暴露容器内部的3000端口
+        - traefik.http.services.gitea.loadbalancer.server.port=3000
+        # 创建一个中间件 对于开启了tls的路由必须为http和https指定不同的路由，因为开启tls后的路由不再接收http请求
+        - traefik.http.middlewares.redirect-http-to-https.redirectscheme.scheme=https
+        # 转发参数
+        - traefik.http.middlewares.redirect-http-to-https.redirectscheme.permanent=true
+        # 将该中间件加载http路由上面
+        - traefik.http.routers.gitea-http.middlewares=redirect-http-to-https
 
 volumes:
   gitea_data:
 ```
 
-- 开启HTTPS。未完待续
+
 
