@@ -1,7 +1,7 @@
 ---
 title: Docker+Traefik部署Gitea并开启HTTPS+SSH容器直通
 date: 2021-04-24 11:29:53
-description: Docker+Traefik部署Gitea并开启HTTPS+SSH容器直通
+description: 最近在学习docker swarm，然后发现如果使用集群的话，反向代理如果还需要手动配置服务发现就太麻烦了。所以又发现了traefik这个可以支持docker集群模式的主动服务发现工具。顺便有朋友让我帮忙部署个代码仓库，所以把过程记录一下。
 categories:
 - Traefik
 - Docker
@@ -13,7 +13,7 @@ categories:
 
 ### traefik介绍：[官网文档](https://doc.traefik.io/traefik/)
 
-- 一个反向代理的工具，可以理解成一个不需要手动改配置的nginx。
+- 一个反向代理的工具，可以理解成一个不需要手动改配置的nginx
 
 ### Gitea介绍：[Docker安装官方文档](https://docs.gitea.io/zh-cn/install-with-docker/)
 
@@ -37,7 +37,7 @@ git@yourdomain.com:yourname/test.git
  ssh://git@yourdomain.com:2224/yourname/test.git
 ```
 
-##### 	使用起来没有任何区别，唯一的区别就是链接长得不一样
+> 使用起来没有任何区别，唯一的区别就是链接长得不一样
 
 ------
 
@@ -130,9 +130,6 @@ api:
   dashboard: true  # 开启控制面板
   insecure: true  # 以不安全的方式开启
 #↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑静态配置修改后需要重启traefik↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
-
-
-
 ```
 
 - ### 配置文件准备好后，使用`docker-compose up -d`启动即可，配置如下,配置了自动将http转发至https中间件
@@ -199,6 +196,4 @@ services:
 volumes:
   gitea_data:
 ```
-
-
 
