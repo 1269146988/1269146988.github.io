@@ -3,8 +3,7 @@ title: Ubuntu安装DNSmasq搭建自己的DNS解析服务器
 date: 2020-07-13 11:29:53
 description: 由于一些你懂得原因，国内运营商的dns总是被污染，所以可以自己部署一个dns服务器用来做dns解析，从此告别dns污染
 categories:
-- Traefik
-- Docker
+- 服务器
 ---
 # Ubuntu安装DNSmasq
 
