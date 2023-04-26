@@ -5,9 +5,7 @@ description: 为了让不同编码习惯的开发者更好的协作配合，并�
 categories:
 - Python
 ---
-[TOC]
 
----
 
 # Python编码风格和编码规范
 
@@ -30,7 +28,7 @@ categories:
    - 【<span style="color: red">**必须**</span>】标识符只能包含字母、数字和下划线（_），不能包含其他特殊字符。
    - 【<span style="color: red">**必须**</span>】标识符的第一个字符必须是字母或下划线，不能是数字。
    - 【<span style="color: red">**必须**</span>】标识符的名称大小写敏感，即`name`和`Name`是不同的标识符。
-   - 【<span style="color: red">**必须**</span>】如果标识符由多个单词组成，可以使用下划线将其分开，例如`first_name`，也被成为小驼峰命名法.
+   - 【<span style="color: red">**必须**</span>】如果标识符由多个单词组成，可以使用下划线将其分开，例如`first_name`，也被称为小驼峰命名法.
    - 【<span style="color: orange">**建议**</span>】标识符的长度没有限制，但建议不要超过79个字符。
      - <span class="good_example_span" style="color:#228b22">***正确示范***</span>
      ```python
@@ -45,7 +43,7 @@ categories:
      ```python
      2student  # 标识符不能以数字开头
      hello-world  # 标识符不能包含连字符
-     print  # 关键字不能用作标识符
+     print  # 内置函数不能用作标识符
      ```
 
 
@@ -1347,6 +1345,28 @@ categories:
 
 - 【<span style="color: red">**必须**</span>】不要使用内置关键字作为变量名、函数名、类名等标识符，以避免出现语法错误或者意外的行为。
 - 【<span style="color: red">**必须**</span>】如果需要使用与内置关键字同名的标识符，可以在标识符前面添加一个下划线，以区分开来。
+
+### 15. eval和exec
+
+> `eval()` 和 `exec()` 是 Python 内置函数，可以用于在程序运行时执行字符串表示的 Python 代码。<br>但是，它们也带来了一些安全风险，因为它们可以执行任意的 Python 代码，包括恶意代码。
+
+- 【<span style="color: red">**必须**</span>】禁止将用户的输入传入`eval`或`exec`，这可能造成非常严重的后果
+
+  - <span class="bad_example_span" style="color:#dc143c">***错误示范***</span>
+
+    ```python
+    s = input('please input:')
+    print eval(s)
+    
+    # 用户输入 __import__('os').system('del delete.py /q')  # 通过这些字符串，用户可以执行任意他想执行的命令
+    
+    
+    def my_view_funtion(request):
+        task_list = eval(request.POST.get('task_list'))  # 非常危险，禁止这样做
+        ...
+    ```
+
+- 【<span style="color: red">**必须**</span>】所有项目中应该严禁使用`eval`或`exec`
 
 ## 三、工具和配置
 
