@@ -6,7 +6,6 @@ categories:
 - Python
 ---
 
-
 # Python编码风格和编码规范
 
 ## 前言
